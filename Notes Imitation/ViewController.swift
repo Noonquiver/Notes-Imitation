@@ -13,6 +13,7 @@ class ViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        title = "Notes"
         let JSONDecoder = JSONDecoder()
         let defaults = UserDefaults.standard
         guard let savedData = defaults.object(forKey: "notes") as? Data else { return }
@@ -21,9 +22,9 @@ class ViewController: UITableViewController {
             ViewController.notes = savedNotes
         }
         
-        tableView.reloadData()
-        
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Compose", style: .plain, target: self, action: #selector(composeNote))
+        navigationController?.navigationBar.tintColor = .systemYellow
+        navigationController?.toolbar.tintColor = .systemYellow
     }
     
     override func viewWillAppear(_ animated: Bool) {

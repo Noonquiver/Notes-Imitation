@@ -21,8 +21,9 @@ class DetailViewController: UIViewController {
         
         let delete = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(deleteNote))
         let editName = UIBarButtonItem(title: "Edit name", style: .plain, target: self, action: #selector(editName))
+        let share = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(shareNote))
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: self, action: nil)
-        setToolbarItems([delete, spacer, editName], animated: true)
+        setToolbarItems([delete, spacer, editName, spacer, share], animated: true)
         navigationController?.isToolbarHidden = false
         navigationController?.navigationBar.prefersLargeTitles = true
     }
@@ -64,6 +65,14 @@ class DetailViewController: UIViewController {
         alertController.addAction(submitNoteName)
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(alertController, animated: true)
+    }
+    
+    @objc func shareNote () {
+        selectedNote.content = textView.text
+        
+        let activityViewController = UIActivityViewController(activityItems: [selectedNote.content], applicationActivities: [])
+        activityViewController.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
+        present(activityViewController, animated: true)
     }
     
     func findNoteIndex() -> Int {
