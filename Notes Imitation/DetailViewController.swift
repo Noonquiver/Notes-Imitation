@@ -9,25 +9,73 @@ import UIKit
 
 class DetailViewController: UIViewController {
     @IBOutlet var textView: UITextView!
+    
     var selectedNote: Note!
-    var index: Int!
+    var index: Int?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         title = selectedNote.title
         textView.text = selectedNote.content
         
         let delete = UIBarButtonItem(barButtonSystemItem: .trash, target: self, action: #selector(deleteNote))
+        let editName = UIBarButtonItem(title: "Edit name", style: .plain, target: self, action: #selector(editName))
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: self, action: nil)
-        setToolbarItems([delete, spacer], animated: true)
+        setToolbarItems([delete, spacer, editName], animated: true)
         navigationController?.isToolbarHidden = false
+        navigationController?.navigationBar.prefersLargeTitles = true
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        selectedNote.content = textView.text
+        ViewController.encodeNotes()
     }
     
     @objc func deleteNote() {
-        if let tableViewController = storyboard?.instantiateViewController(withIdentifier: "TableViewController") {
-            ViewController.notes.remove(at: index)
-            ViewController.encodeNotes()
-            navigationController?.pushViewController(tableViewController, animated: true)
+        var index = index ?? -1
+        
+        if index == -1 {
+            index = findNoteIndex()
         }
+        
+        ViewController.notes.remove(at: index)
+        ViewController.encodeNotes()
+        
+        navigationController?.popToRootViewController(animated: true)
+    }
+    
+    @objc func editName() {
+        let alertController = UIAlertController(title: "Edit note name", message: nil, preferredStyle: .alert)
+        alertController.addTextField()
+        
+        let submitNoteName = UIAlertAction(title: "Submit", style: .default) {
+            [weak self, weak alertController] _ in
+            guard let name = alertController?.textFields?[0].text else { return }
+            
+            if !name.elementsEqual("") {
+                self?.selectedNote.title = name
+                self?.title = name
+            }
+            
+            ViewController.encodeNotes()
+        }
+        
+        alertController.addAction(submitNoteName)
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alertController, animated: true)
+    }
+    
+    func findNoteIndex() -> Int {
+        var index = -1
+        
+        for (i, note) in ViewController.notes.enumerated() {
+            if note == selectedNote {
+                index = i
+                break
+            }
+        }
+        
+        return index
     }
 }

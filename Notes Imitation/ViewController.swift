@@ -9,7 +9,6 @@ import UIKit
 
 class ViewController: UITableViewController {
     static var notes = [Note]()
-    static var untitledNotes = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,12 +19,15 @@ class ViewController: UITableViewController {
                 
         if let savedNotes = try? JSONDecoder.decode([Note].self, from: savedData) {
             ViewController.notes = savedNotes
-            ViewController.untitledNotes = defaults.integer(forKey: "untitledNotes")
         }
         
         tableView.reloadData()
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(createNote))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Compose", style: .plain, target: self, action: #selector(composeNote))
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        tableView.reloadData()
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -41,38 +43,52 @@ class ViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if let detailViewController = storyboard?.instantiateViewController(withIdentifier: "DetailViewController") as? DetailViewController {
-            detailViewController.selectedNote = ViewController.notes[indexPath.row]
-            detailViewController.index = indexPath.row
-            navigationController?.pushViewController(detailViewController, animated: true)
-        }
+        instantiateNoteView(note: ViewController.notes[indexPath.row], index: indexPath.row)
     }
     
-    @objc func createNote() {
+    @objc func composeNote() {
         let note = Note()
+        let alertController = UIAlertController(title: "Name your note", message: nil, preferredStyle: .alert)
+        alertController.addTextField()
         
-        if ViewController.notes.contains(where: {
-            noteInNotes in
-            noteInNotes.title.contains("Untitled")
-        }) {
-            note.title += "\(ViewController.untitledNotes)"
+        let submitNoteName = UIAlertAction(title: "Submit", style: .default) {
+            [weak self, weak alertController] _ in
+            guard let name = alertController?.textFields?[0].text else { return }
+            
+            if !name.elementsEqual("") {
+                note.title = name
+            }
+            
+            ViewController.notes.append(note)
+            ViewController.encodeNotes()
+            self?.instantiateNoteView(note: note)
         }
         
-        ViewController.untitledNotes += 1
-        ViewController.notes.append(note)
-        
-        ViewController.encodeNotes()
-        
-        tableView.reloadData()
+        alertController.addAction(submitNoteName)
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alertController, animated: true)
     }
     
     static func encodeNotes() {
         let JSONEncoder = JSONEncoder()
-        let defaults = UserDefaults.standard
         
         if let savedData = try? JSONEncoder.encode(notes) {
-            defaults.set(savedData, forKey: "notes")
-            defaults.set(untitledNotes, forKey: "untitledNotes")
+            UserDefaults.standard.set(savedData, forKey: "notes")
+        }
+    }
+    
+    func instantiateNoteView(note: Note) {
+        if let detailViewController = storyboard?.instantiateViewController(withIdentifier: "DetailViewController") as? DetailViewController {
+            detailViewController.selectedNote = note
+            navigationController?.pushViewController(detailViewController, animated: true)
+        }
+    }
+    
+    func instantiateNoteView(note: Note, index: Int) {
+        if let detailViewController = storyboard?.instantiateViewController(withIdentifier: "DetailViewController") as? DetailViewController {
+            detailViewController.selectedNote = note
+            detailViewController.index = index
+            navigationController?.pushViewController(detailViewController, animated: true)
         }
     }
 }
